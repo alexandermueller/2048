@@ -2,15 +2,10 @@
 # -*- coding: utf-8 -*- 
 
 import curses
-from mechanics import *
+import * from mechanics
 
-screen  = curses.initscr()
-event   = 0
-buttons = {curses.KEY_RIGHT : 'right', curses.KEY_LEFT : 'left', curses.KEY_DOWN : 'down', curses.KEY_UP : 'up'}
-
-def printMap(gameMap):
-    for row in gameMap:
-        screen.addstr('\t'.join(map(str, row)) + '\n')
+screen = curses.initscr()
+event  = 0
 
 def getHighScore():
     highScoreFile = open('HighScores.txt', 'r')
@@ -42,29 +37,20 @@ def mainMenu():
             break
 
 def gameLoop():
-    global gameSeed, screen, event, score
-    
-    seed(gameSeed)
- 
+    global screen, event
+    score     = 0
     highScore = getHighScore() 
-    gameMap   = initMap()
-
+    
     while True:
         screen.clear()
         
         highScore = highScore if highScore > score else score
-        screen.addstr('-- 2048 / Highscore: %s, Current Score: %d --\n\n' % (highScore, score))
-
-        printMap(gameMap)
-
+        screen.addstr('-- 2048 / Highscore: %s, Current Score: %d --' % (highScore, score))
+        
+        x = 1
+        
         if not capturePresses():
             break
-        elif event in buttons.keys():
-            prevMap = copyMap(gameMap)
-            gameMap = moveMap(buttons[event], gameMap)
-
-            if areNotEqual(prevMap, gameMap):
-                gameMap = addNumber(gameMap)
 
 def main(stdscr):
     global screen, event
