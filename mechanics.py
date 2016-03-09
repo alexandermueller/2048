@@ -102,15 +102,3 @@ def initMap():
         gameMap = addNumber(gameMap, True)
 
     return gameMap
-
-# def printMap(gameMap):
-#     for row in gameMap:
-#         print '\t'.join(map(str, row))
-
-# testGameMap = [[0,0,2,8], [8,8,2,0], [0,2,2,8], [2,2,8,8]]
-
-# printMap(testGameMap)
-
-# for direction in ['left', 'right', 'up', 'down']:
-#     print direction
-#     printMap(moveMap(direction, testGameMap))    
