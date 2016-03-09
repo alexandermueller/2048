@@ -6,12 +6,30 @@ from random import *
 gameSeed = datetime.now()
 score    = 0
 
+def getGameSeed():
+    global gameSeed
+    return gameSeed
+
+def getScore():
+    global score
+    return score
+
 def areNotEqual(prevMap, gameMap):
     for i in xrange(4):
         for j in xrange(4):
             if prevMap[i][j] != gameMap[i][j]:
                 return True
     return False
+
+def isTheEnd(gameMap):
+    global score
+    realScore = score
+    for direction in ['right', 'left', 'down', 'up']:
+        if areNotEqual(gameMap, moveMap(direction, gameMap)):
+            score = realScore
+            return False
+    score = realScore
+    return True
 
 def copyMap(gameMap):
     result = []

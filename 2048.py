@@ -4,20 +4,26 @@
 import curses
 from mechanics import *
 
-screen  = curses.initscr()
-event   = 0
-buttons = {curses.KEY_RIGHT : 'right', curses.KEY_LEFT : 'left', curses.KEY_DOWN : 'down', curses.KEY_UP : 'up'}
+screen   = curses.initscr()
+buttons  = {curses.KEY_RIGHT : 'right', curses.KEY_LEFT : 'left', curses.KEY_DOWN : 'down', curses.KEY_UP : 'up'}
+event    = 0
+moves    = 0
+mistakes = 0
 
 def printMap(gameMap):
     for row in gameMap:
         screen.addstr('\t'.join(map(str, row)) + '\n')
+
+def setHighScore(highScore):
+    highScoreFile = open('HighScores.txt', 'w')
+    highScoreFile.write(str(highScore))
+    highScoreFile.close()
 
 def getHighScore():
     highScoreFile = open('HighScores.txt', 'r')
     highScore     = highScoreFile.read()
 
     highScoreFile.close()
-    
     return int(highScore)
 
 def capturePresses():
@@ -42,22 +48,23 @@ def mainMenu():
             break
 
 def gameLoop():
-    global gameSeed, screen, event, score
+    global screen, event, moves, mistakes
     
-    seed(gameSeed)
+    seed(getGameSeed())
  
     highScore = getHighScore() 
     gameMap   = initMap()
 
     while True:
         screen.clear()
-        
+
+        score     = getScore()
         highScore = highScore if highScore > score else score
         screen.addstr('-- 2048 / Highscore: %s, Current Score: %d --\n\n' % (highScore, score))
 
         printMap(gameMap)
 
-        if not capturePresses():
+        if isTheEnd(gameMap) or not capturePresses():
             break
         elif event in buttons.keys():
             prevMap = copyMap(gameMap)
@@ -65,6 +72,26 @@ def gameLoop():
 
             if areNotEqual(prevMap, gameMap):
                 gameMap = addNumber(gameMap)
+                moves += 1
+            else:
+                mistakes += 1
+    
+    setHighScore(highScore)     
+
+def endGame():
+    global screen, event, moves, mistakes
+
+    screen.clear()
+    screen.addstr('-- 2048 / Game Over --\n') 
+    screen.addstr('----- Game Stats -----\n')
+    screen.addstr('Score:\t\t%d\n' % getScore())
+    screen.addstr('Moves:\t\t%d\n' % moves)
+    screen.addstr('Mistakes:\t%d\n\n' % mistakes)
+    screen.addstr('Press space to try again! Otherwise, hit q to leave.')
+    
+    while capturePresses():
+        if event == ord(' '):
+            break
 
 def main(stdscr):
     global screen, event
@@ -78,6 +105,7 @@ def main(stdscr):
     while event != ord('q'):
         mainMenu()
         gameLoop()
+        endGame()
 
     curses.endwin()
 
