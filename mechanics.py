@@ -28,7 +28,7 @@ def isTheEnd(gameMap):
         if areNotEqual(gameMap, moveMap(direction, gameMap)):
             score = realScore
             return False
-    score = realScore
+    score = realScoremode = 'play_mode'
     return True
 
 def copyMap(gameMap):
