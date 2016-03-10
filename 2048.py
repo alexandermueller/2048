@@ -2,12 +2,16 @@
 # -*- coding: utf-8 -*- 
 
 import curses
-from mechanics import *
 import os.path
+from mechanics import *
 
 screen   = curses.initscr()
 buttons  = {curses.KEY_RIGHT : 'right', curses.KEY_LEFT : 'left', curses.KEY_DOWN : 'down', curses.KEY_UP : 'up'}
 moves    = {'left' : 0, 'right' : 0, 'down' : 0, 'up' : 0, 'total' : 0, 'useless' : 0}
+mods     = {'play_mode' : {'P' : 'Player', 'A' : 'AI'}, 
+            'win_mode'  : {'0' : '2048', '6' : '4096', '9' : '8192', 'L' : '∞'}, 
+            'map_size'  : {'N' : '4x4', 'R' : 'x'.join([str(randint(2, 12)), str(randint(2, 12))])}, 
+            'drop_type' : {'2' : 'Twos Only', '4' : 'Fours Only', '+' : 'Twos And Fours'}}
 settings = {}
 stats    = {}
 event    = 0
@@ -17,8 +21,21 @@ def printStat(stat, maxLen):
     return ' ' * (maxLen - len(stat)) + stat
 
 def printMap(gameMap):
+    global mods, stats
+    
+    largest   = getLargest()
+    maxNumLen = len(str(largest))
+    divider   = '+-%s-+\n' % ('-+-'.join(['-' * maxNumLen] * int(mods['map_size'][settings['map_size']][0]))) 
+    title     = '%s' % mods['win_mode'][settings['win_mode']]
+    filler    = ' ' * ((len(divider) - len(title) - 2) / 2)
+
+    screen.addstr('%s-%s-%s\n' % (filler, title, filler))
+
     for row in gameMap:
-        screen.addstr('\t'.join(map(str, row)) + '\n')
+        screen.addstr(divider)
+        screen.addstr('| %s |\n' % (' | '.join([printStat(num, maxNumLen) for num in row])))
+
+    screen.addstr(divider)
 
 def setAssignments(filename, assignments):
     assignmentsFile = open(filename, 'w')
@@ -49,7 +66,7 @@ def setStats(stats):
     setAssignments('Stats.txt', stats)
 
 def getStats():    
-    stats = getAssignments('Stats.txt', {'high' : 0, 'most' : 0, 'least' : 0})
+    stats = getAssignments('Stats.txt', {'high' : 0, 'most' : 0, 'least' : 0, 'largest' : 2})
     
     for stat in stats.keys():
         stats[stat] = int(stats[stat])
@@ -79,10 +96,11 @@ def mainMenu():
 
     while True:
         screen.clear()
-        screen.addstr('-- 2048 / Instructions --\n') 
-        screen.addstr('1. Use directional keys on keyboard to make moves. Press "q" to quit.\n')
-        screen.addstr('2. Combine equal tiles together to create tiles with 2x the value. Try to get to 2048 to win!\n')
-        screen.addstr('3. Press the keys inside the square braces to set up the game according to your tastes.\n\n')
+        screen.addstr('+------------------------------------- 2048 / Instructions -------------------------------------+\n') 
+        screen.addstr('| 1. Use directional keys on keyboard to make moves. Press "q" to quit.                         |\n')
+        screen.addstr('| 2. Combine equal tiles together to create tiles with 2x the value. Try to get to 2048 to win! |\n')
+        screen.addstr('| 3. Press the keys inside the square braces to set up the game according to your tastes.       |\n')
+        screen.addstr('+-----------------------------------------------------------------------------------------------+\n\n') 
         screen.addstr('+--------------------- Settings ---------------------+\n')
         screen.addstr('| Play Mode..([A]I/[P]layer).....................: %s |\n' % settings['play_mode'] if 'play_mode' in settings else defaults['play_mode'])
         screen.addstr('| Win Mode...(2[0]48/409[6]/81[9]2/[L]imitless)..: %s |\n' % settings['win_mode'] if 'win_mode' in settings else defaults['win_mode'])
@@ -109,10 +127,12 @@ def mainMenu():
         if mode != '':
             settings[mode] = chr(event).upper()
 
+        # if settings['map_size'] == 'C':
+
     setSettings(settings)
 
 def gameLoop():
-    global screen, event, stats, moves
+    global screen, event, settings, stats, moves, mods
     
     seed(getGameSeed())
  
@@ -123,11 +143,24 @@ def gameLoop():
         screen.clear()
 
         score     = getScore()
-        highScore = highScore if highScore > score else score
-        screen.addstr('-- 2048 / Highscore: %s, Current Score: %d, Least Moves To Win/Most Moves Ever Made: %d/%d, Move Count: %d --\n\n' % (highScore, score, stats['least'], stats['most'], moves['total']))
+        highScore = max(highScore, score)
+        
+        chosen    = [mods[mode][settings[mode]] for mode in ['play_mode', 'win_mode', 'map_size', 'drop_type']]    
+        topRow    = [highScore, stats['largest'], stats['least'], stats['most']]
+        title     = ' / '.join(chosen)
+        divider   = '+----------------%s-+-----------------%s-+---------------------%s-%s-+' % tuple(['-' * len(str(stat)) for stat in topRow])
+        filler    = '-' * ((len(divider) - len(title) - 4) / 2)
 
-        printMap(gameMap)
+        screen.addstr(' %s %s %s\n' % (filler, title, filler))
+        screen.addstr('%s\n' % divider)
+        screen.addstr('| Highscore....: %d | Record Largest: %s | Least/Most Moves..: %s/%s |\n' % tuple(topRow))
+        screen.addstr('| Current Score: %s | Game Largest..: %s | Current Move Count: %s %s |\n' % (printStat(score, len(str(topRow[0]))), printStat(getLargest(), len(str(topRow[1]))), ' ' * len(str(topRow[2])), printStat(moves['total'], len(str(topRow[3])))))
+        screen.addstr('%s\n\n' % divider)
+        
+        printMap(gameMap) 
 
+        # if hasWon(gameMap, settings['win_mode']):
+        #     screen.addstr('')
         if isTheEnd(gameMap) or not capturePresses():
             break
         elif event in buttons.keys():
@@ -138,17 +171,18 @@ def gameLoop():
                 gameMap = addNumber(gameMap)
                 moves[buttons[event]] += 1
                 moves['total'] += 1
-                stats['most'] = moves['total'] if moves['total'] > stats['most'] else stats['most']
+                stats['most'] = max(moves['total'], stats['most'])
+                stats['largest'] = max(getLargest(), stats['largest'])
             else:
                 moves['useless'] += 1
-    
+
     stats['high'] = highScore
 
 def endGame():
     global screen, event, stats, moves
 
     highScore = str(stats['high'])
-    digits = len(highScore)
+    digits = max(len(highScore), len(str(getLargest())))
 
     if not digits % 2:
         digits += 1
@@ -160,6 +194,8 @@ def endGame():
     screen.clear()
     screen.addstr(' %s--- 2048 / Game Over ---%s \n' % (half, half))
     screen.addstr('+%s------ Game Stats ------%s+\n' % (half, half))
+    screen.addstr('| Record Largest......:%s |\n' % printStat(stats['largest'], digits))
+    screen.addstr('| Game Largest........:%s |\n' % printStat(getLargest(), digits))
     screen.addstr('| Highscore...........:%s |\n' % printStat(highScore, digits))
     screen.addstr('| Score...............:%s |\n' % printStat(getScore(), digits))
     screen.addstr('| Ups.................:%s |\n' % printStat(moves['up'], digits))

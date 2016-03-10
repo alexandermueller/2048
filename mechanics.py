@@ -5,6 +5,7 @@ from random import *
 
 gameSeed = datetime.now()
 score    = 0
+largest  = 2
 
 def getGameSeed():
     global gameSeed
@@ -14,6 +15,10 @@ def getScore():
     global score
     return score
 
+def getLargest():
+    global largest
+    return largest
+
 def areNotEqual(prevMap, gameMap):
     for i in xrange(4):
         for j in xrange(4):
@@ -21,14 +26,22 @@ def areNotEqual(prevMap, gameMap):
                 return True
     return False
 
+def hasWon(gameMap, winMode):
+    return False
+
 def isTheEnd(gameMap):
-    global score
-    realScore = score
+    global score, largest
+    realScore   = score
+    realLargest = largest
+    
     for direction in ['right', 'left', 'down', 'up']:
         if areNotEqual(gameMap, moveMap(direction, gameMap)):
-            score = realScore
+            score   = realScore
+            largest = realLargest
             return False
-    score = realScore
+    
+    score   = realScore
+    largest = realLargest        
     return True
 
 def copyMap(gameMap):
@@ -59,7 +72,7 @@ def moveMap(direction, gameMap):
     return gameMap
 
 def solve(gameMap):
-    global score
+    global score, largest
     result = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
 
     for i in xrange(4):
@@ -78,6 +91,7 @@ def solve(gameMap):
                     result[i][posn] += mapNum
                     posn += 1
                     score += mapNum * 2
+                    largest = max(2 * mapNum, largest)
                 else:
                     posn += 1
                     result[i][posn] = mapNum
@@ -85,6 +99,7 @@ def solve(gameMap):
     return result
 
 def addNumber(gameMap, start = False):
+    global largest
     result = copyMap(gameMap)
 
     while True:
@@ -93,6 +108,7 @@ def addNumber(gameMap, start = False):
         
         if gameMap[row][column] == 0:
             result[row][column] = 2 if start or random() < 0.8 else 4
+            largest = max(result[row][column], largest)
             return result
 
 def initMap():
