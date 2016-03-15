@@ -3,30 +3,66 @@
 from datetime import datetime
 from random import *
 
-gameSeed = datetime.now()
-score    = 0
-largest  = 2
+gameSeed   = datetime.now()
+score      = 0
+largest    = 2
+dimensions = [4, 4]
+
+def setDimensions(x, y):
+    global dimensions
+    dimensions = [x, y]
+
+def getDimensions(gameMap = False):
+    global dimensions
+    if gameMap:
+       return [len(gameMap[0]), len(gameMap)]
+    
+    return dimensions
+
+def getDefaultMap(x = False, y = False):
+    default = []
+    (x, y)  = [x, y] if x and y else getDimensions()
+    
+    for i in xrange(y):
+        default.append([])
+        for j in xrange(x):
+            default[i].append(0)
+
+    return default
+
 
 def getGameSeed():
     global gameSeed
     return gameSeed
 
+def resetScore():
+    global score
+    score = 0
+
 def getScore():
     global score
     return score
+
+def resetLargest():
+    global largest
+    largest = 0
 
 def getLargest():
     global largest
     return largest
 
 def areNotEqual(prevMap, gameMap):
-    for i in xrange(4):
-        for j in xrange(4):
+    (x, y) = getDimensions()
+    
+    for i in xrange(y):
+        for j in xrange(x):
             if prevMap[i][j] != gameMap[i][j]:
                 return True
     return False
 
-def hasWon(gameMap, winMode):
+def hasWon(winMode):
+    if (getLargest() == int(winMode)):
+        return True
     return False
 
 def isTheEnd(gameMap):
@@ -46,9 +82,11 @@ def isTheEnd(gameMap):
 
 def copyMap(gameMap):
     result = []
-    for i in xrange(4):
+    (x, y) = getDimensions()
+
+    for i in xrange(y):
         result.append([])
-        for j in xrange(4):
+        for j in xrange(x):
             result[i].append(gameMap[i][j])
 
     return result
@@ -73,14 +111,16 @@ def moveMap(direction, gameMap):
 
 def solve(gameMap):
     global score, largest
-    result = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
+    
+    (x, y) = getDimensions(gameMap)
+    result = getDefaultMap(x, y)
 
-    for i in xrange(4):
+    for i in xrange(y):
         posn   = 0
         mapRow = gameMap[i]
         resRow = result[i]
 
-        for j in xrange(4):
+        for j in xrange(x):
             mapNum = mapRow[j]
             resNum = resRow[posn]
 
@@ -98,23 +138,34 @@ def solve(gameMap):
    
     return result
 
-def addNumber(gameMap, start = False):
+def addNumber(gameMap, drops, start = False):
     global largest
+
     result = copyMap(gameMap)
+    (x, y) = getDimensions()
 
     while True:
-        row    = randint(0,3)
-        column = randint(0,3)
+        row    = randint(0, y - 1)
+        column = randint(0, x - 1)
         
         if gameMap[row][column] == 0:
-            result[row][column] = 2 if start or random() < 0.8 else 4
-            largest = max(result[row][column], largest)
+            if start:
+                result[row][column] = drops[-1][1]
+            else:
+                chance = random()
+                for i in xrange(len(drops)):
+                    (frequency, drop) = drops[i]
+                    if (chance < frequency):
+                        result[row][column] = drop
+                        largest = max(drop, largest)
+                        break
+
             return result
 
-def initMap():
-    gameMap = [[0,0,0,0],[0,0,0,0],[0,0,0,0],[0,0,0,0]]
+def initMap(drops):
+    gameMap = getDefaultMap()
 
     for i in xrange(2):
-        gameMap = addNumber(gameMap, True)
+        gameMap = addNumber(gameMap, drops, start = True)
 
     return gameMap

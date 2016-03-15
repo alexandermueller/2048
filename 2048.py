@@ -8,9 +8,10 @@ from mechanics import *
 screen   = curses.initscr()
 buttons  = {curses.KEY_RIGHT : 'right', curses.KEY_LEFT : 'left', curses.KEY_DOWN : 'down', curses.KEY_UP : 'up'}
 moves    = {'left' : 0, 'right' : 0, 'down' : 0, 'up' : 0, 'total' : 0, 'useless' : 0}
+drops    = {'2' : ((1, 2),), '4' : ((1, 4),), '+' : ((0.2, 4), (1, 2))}
 mods     = {'play_mode' : {'P' : 'Player', 'A' : 'AI'}, 
             'win_mode'  : {'0' : '2048', '6' : '4096', '9' : '8192', 'L' : '∞'}, 
-            'map_size'  : {'N' : '4x4', 'R' : 'x'.join([str(randint(2, 12)), str(randint(2, 12))])}, 
+            'map_size'  : {'N' : '4x4', 'R' : '4x4'}, 
             'drop_type' : {'2' : 'Twos Only', '4' : 'Fours Only', '+' : 'Twos And Fours'}}
 settings = {}
 stats    = {}
@@ -87,12 +88,19 @@ def capturePresses():
     
     return event != ord('q')
 
+def waitForSpace():
+    while capturePresses():
+        if event == ord(' '):
+            break
+
 def mainMenu():
-    global screen, event, settings, stats
+    global screen, event, settings, stats, mods
 
     defaults = {'play_mode' : 'P', 'win_mode' : '0', 'map_size' : 'N', 'drop_type' : '+', 'custom_map_size' : '4x4'}
     settings = getSettings()
     stats    = getStats()
+    
+    mods['map_size']['R'] = 'x'.join([str(randint(2, 7)), str(randint(2, 7))])
 
     while True:
         screen.clear()
@@ -132,12 +140,20 @@ def mainMenu():
     setSettings(settings)
 
 def gameLoop():
-    global screen, event, settings, stats, moves, mods
+    global screen, event, settings, stats, moves, mods, drops
     
     seed(getGameSeed())
- 
+    
     highScore = stats['high'] 
-    gameMap   = initMap()
+    (x, y)    = mods['map_size'][settings['map_size']].split('x')
+    
+    setDimensions(int(x), int(y))
+    
+    gameMap   = initMap(drops[settings['drop_type']])
+    moves     = {'left' : 0, 'right' : 0, 'down' : 0, 'up' : 0, 'total' : 0, 'useless' : 0}
+    
+    resetScore()
+    resetLargest()
 
     while True:
         screen.clear()
@@ -159,16 +175,21 @@ def gameLoop():
         
         printMap(gameMap) 
 
-        # if hasWon(gameMap, settings['win_mode']):
-        #     screen.addstr('')
+        if hasWon(mods['win_mode'][settings['win_mode']]):
+            screen.addstr("\nCongrats! You are a winner! Press Space To Continue.")
+            stats['least'] = min(moves['total'], stats['least']) if stats['least'] else moves['total']
+            waitForSpace()  
+            break
         if isTheEnd(gameMap) or not capturePresses():
+            screen.addstr("\nDarn, better luck next time! Press Space To Continue.")
+            waitForSpace()
             break
         elif event in buttons.keys():
             prevMap = copyMap(gameMap)
             gameMap = moveMap(buttons[event], gameMap)
 
             if areNotEqual(prevMap, gameMap):
-                gameMap = addNumber(gameMap)
+                gameMap = addNumber(gameMap, drops[settings['drop_type']])
                 moves[buttons[event]] += 1
                 moves['total'] += 1
                 stats['most'] = max(moves['total'], stats['most'])
@@ -209,9 +230,7 @@ def endGame():
     screen.addstr('+-----------------------%s+\n\n' % full)
     screen.addstr('Press space to try again! Otherwise, hit q to leave.')
     
-    while capturePresses():
-        if event == ord(' '):
-            break
+    waitForSpace()
 
     setStats(stats)
 
