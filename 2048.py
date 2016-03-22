@@ -83,7 +83,7 @@ def getSettings():
     return getAssignments('GameSettings.txt', {'play_mode' : 'P', 'win_mode' : '0', 'map_size' : 'N', 'drop_type' : '+', 'custom_map_size' : '4x4'})
 
 def capturePresses(aiRunning = False, gameMap = [[0] * 4] * 4):
-    global event, mods
+    global event, directions
 
     if aiRunning:
         event = directions[makeMove(gameMap)]
