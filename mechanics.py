@@ -43,6 +43,19 @@ def getScore():
     global score
     return score
 
+def getMovePoints(gameMap):
+    points = { 'up' : 0, 'down' : 0, 'right' : 0, 'left' : 0 }
+    for direction in points.keys():
+        if direction == 'up':
+            points[direction] = solve(ccw(gameMap), True, True)
+        elif direction == 'down':
+            points[direction] = solve(cw(gameMap), True, True)
+        elif direction == 'right':
+            points[direction] = solve(cw(cw(gameMap)), True, True)
+        elif direction == 'left':
+            points[direction] = solve(gameMap, True, True)
+    return points
+
 def resetLargest():
     global largest
     largest = 0
@@ -61,23 +74,15 @@ def areNotEqual(prevMap, gameMap):
     return False
 
 def hasWon(winMode):
-    if (getLargest() == int(winMode)):
+    if getLargest() == int(winMode):
         return True
     return False
 
 def isTheEnd(gameMap):
-    global score, largest
-    realScore   = score
-    realLargest = largest
-    
     for direction in ['right', 'left', 'down', 'up']:
-        if areNotEqual(gameMap, moveMap(direction, gameMap)):
-            score   = realScore
-            largest = realLargest
+        if areNotEqual(gameMap, moveMap(direction, gameMap, test = True)):
             return False
     
-    score   = realScore
-    largest = realLargest        
     return True
 
 def copyMap(gameMap):
@@ -97,23 +102,24 @@ def cw(gameMap):
 def ccw(gameMap):
     return zip(*gameMap)[::-1]
 
-def moveMap(direction, gameMap):
+def moveMap(direction, gameMap, test = False):
     if direction == 'up':
-        gameMap = cw(solve(ccw(gameMap)))
+        gameMap = cw(solve(ccw(gameMap), test))
     elif direction == 'down':
-        gameMap = ccw(solve(cw(gameMap)))
+        gameMap = ccw(solve(cw(gameMap), test))
     elif direction == 'right':
-        gameMap = cw(cw(solve(cw(cw(gameMap)))))
+        gameMap = cw(cw(solve(cw(cw(gameMap)), test)))
     elif direction == 'left':
-        gameMap = solve(gameMap)
+        gameMap = solve(gameMap, test)
 
     return gameMap
 
-def solve(gameMap):
+def solve(gameMap, test = False, points = False):
     global score, largest
     
     (x, y) = getDimensions(gameMap)
     result = getDefaultMap(x, y)
+    total  = 0
 
     for i in xrange(y):
         posn   = 0
@@ -130,13 +136,17 @@ def solve(gameMap):
                 elif resNum == mapNum:
                     result[i][posn] += mapNum
                     posn += 1
-                    score += mapNum * 2
-                    largest = max(2 * mapNum, largest)
+
+                    if test or points:
+                        total += mapNum * 2
+                    elif not test:
+                        score  += mapNum * 2
+                        largest = max(2 * mapNum, largest)
                 else:
                     posn += 1
                     result[i][posn] = mapNum
    
-    return result
+    return result if not points else total
 
 def addNumber(gameMap, drops, start = False):
     global largest
@@ -155,7 +165,7 @@ def addNumber(gameMap, drops, start = False):
                 chance = random()
                 for i in xrange(len(drops)):
                     (frequency, drop) = drops[i]
-                    if (chance < frequency):
+                    if chance < frequency:
                         result[row][column] = drop
                         largest = max(drop, largest)
                         break

@@ -4,18 +4,20 @@
 import curses
 import os.path
 from mechanics import *
+from ai import makeMove
 
-screen   = curses.initscr()
-buttons  = {curses.KEY_RIGHT : 'right', curses.KEY_LEFT : 'left', curses.KEY_DOWN : 'down', curses.KEY_UP : 'up'}
-moves    = {'left' : 0, 'right' : 0, 'down' : 0, 'up' : 0, 'total' : 0, 'useless' : 0}
-drops    = {'2' : ((1, 2),), '4' : ((1, 4),), '+' : ((0.2, 4), (1, 2))}
-mods     = {'play_mode' : {'P' : 'Player', 'A' : 'AI'}, 
-            'win_mode'  : {'0' : '2048', '6' : '4096', '9' : '8192', 'L' : '∞'}, 
-            'map_size'  : {'N' : '4x4', 'R' : '4x4'}, 
-            'drop_type' : {'2' : 'Twos Only', '4' : 'Fours Only', '+' : 'Twos And Fours'}}
-settings = {}
-stats    = {}
-event    = 0
+screen     = curses.initscr()
+directions = {'right' : curses.KEY_RIGHT, 'left' : curses.KEY_LEFT, 'down' : curses.KEY_DOWN, 'up' : curses.KEY_UP}
+buttons    = {curses.KEY_RIGHT : 'right', curses.KEY_LEFT : 'left', curses.KEY_DOWN : 'down', curses.KEY_UP : 'up'}
+moves      = {'left' : 0, 'right' : 0, 'down' : 0, 'up' : 0, 'total' : 0, 'useless' : 0}
+drops      = {'2' : ((1, 2),), '4' : ((1, 4),), '+' : ((0.2, 4), (1, 2))}
+mods       = {'play_mode' : {'P' : 'Player', 'A' : 'AI'}, 
+              'win_mode'  : {'0' : '2048', '6' : '4096', '9' : '8192', 'L' : '-1'}, 
+              'map_size'  : {'N' : '4x4', 'R' : '4x4'}, 
+              'drop_type' : {'2' : 'Twos Only', '4' : 'Fours Only', '+' : 'Twos And Fours'}}
+settings   = {}
+stats      = {}
+event      = 0
 
 def printStat(stat, maxLen):
     stat = str(stat)
@@ -80,10 +82,12 @@ def setSettings(settings):
 def getSettings():    
     return getAssignments('GameSettings.txt', {'play_mode' : 'P', 'win_mode' : '0', 'map_size' : 'N', 'drop_type' : '+', 'custom_map_size' : '4x4'})
 
-def capturePresses():
-    global event
+def capturePresses(aiRunning = False, gameMap = [[0] * 4] * 4):
+    global event, mods
 
-    if event != ord('q'):
+    if aiRunning:
+        event = directions[makeMove(gameMap)]
+    elif event != ord('q'):
         event = screen.getch() 
     
     return event != ord('q')
@@ -180,7 +184,7 @@ def gameLoop():
             stats['least'] = min(moves['total'], stats['least']) if stats['least'] else moves['total']
             waitForSpace()  
             break
-        if isTheEnd(gameMap) or not capturePresses():
+        if isTheEnd(gameMap) or not capturePresses(settings['play_mode'] == 'A', gameMap):
             screen.addstr("\nDarn, better luck next time! Press Space To Continue.")
             waitForSpace()
             break
