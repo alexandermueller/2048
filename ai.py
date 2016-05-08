@@ -33,5 +33,5 @@ def iterativeDFS(count, gameMap, move = ''):
         return maxMove if move == '' else maxPoint
 
 def makeMove(gameMap):
-    # return greedy(gameMap)
-    # return iterativeDFS(1, gameMap)
+    return greedy(gameMap)
+    # return iterativeDFS(1, gameMap) !!!WIP!!!
