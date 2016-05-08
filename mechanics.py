@@ -43,17 +43,17 @@ def getScore():
     global score
     return score
 
-def getMovePoints(gameMap):
-    points = { 'up' : 0, 'down' : 0, 'right' : 0, 'left' : 0 }
-    for direction in points.keys():
+def getMovePoints(gameMap, directions = ['up', 'down', 'right', 'left']):
+    points = {}
+    for direction in directions:
         if direction == 'up':
-            points[direction] = solve(ccw(gameMap), True, True)
+            points[direction] = solve(ccw(gameMap), test = True, points = True)
         elif direction == 'down':
-            points[direction] = solve(cw(gameMap), True, True)
+            points[direction] = solve(cw(gameMap), test = True, points = True)
         elif direction == 'right':
-            points[direction] = solve(cw(cw(gameMap)), True, True)
+            points[direction] = solve(cw(cw(gameMap)), test = True, points = True)
         elif direction == 'left':
-            points[direction] = solve(gameMap, True, True)
+            points[direction] = solve(gameMap, test = True, points = True)
     return points
 
 def resetLargest():

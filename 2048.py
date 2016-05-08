@@ -244,7 +244,13 @@ def main(stdscr):
     screen.clear()
     
     curses.noecho() 
-    curses.curs_set(0) 
+    
+    if hasattr(curses, 'curs_set'):
+        try:
+            curses.curs_set(0)  # make the cursor invisible
+        except:
+            pass
+    
     screen.keypad(1) 
 
     while event != ord('q'):
