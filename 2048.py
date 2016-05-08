@@ -1,6 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*- 
 
+import time
 import curses
 import os.path
 from mechanics import *
@@ -11,13 +12,15 @@ directions = {'right' : curses.KEY_RIGHT, 'left' : curses.KEY_LEFT, 'down' : cur
 buttons    = {curses.KEY_RIGHT : 'right', curses.KEY_LEFT : 'left', curses.KEY_DOWN : 'down', curses.KEY_UP : 'up'}
 moves      = {'left' : 0, 'right' : 0, 'down' : 0, 'up' : 0, 'total' : 0, 'useless' : 0}
 drops      = {'2' : ((1, 2),), '4' : ((1, 4),), '+' : ((0.2, 4), (1, 2))}
-mods       = {'play_mode' : {'P' : 'Player', 'A' : 'AI'}, 
-              'win_mode'  : {'0' : '2048', '6' : '4096', '9' : '8192', 'L' : '-1'}, 
-              'map_size'  : {'N' : '4x4', 'R' : '4x4'}, 
-              'drop_type' : {'2' : 'Twos Only', '4' : 'Fours Only', '+' : 'Twos And Fours'}}
+mods       = {'play_mode'  : {'P' : 'Player', 'A' : 'AI'}, 
+              'win_mode'   : {'0' : '2048', '6' : '4096', '9' : '8192', 'L' : '-1'}, 
+              'map_size'   : {'N' : '4x4', 'R' : '4x4'}, 
+              'drop_type'  : {'2' : 'Twos Only', '4' : 'Fours Only', '+' : 'Twos And Fours'},
+              'game_speed' : {'S' : 'Slow', 'M' : 'Medium', 'F' : 'Fast'}}
 settings   = {}
 stats      = {}
 event      = 0
+timeouts   = {'S' : 0.1, 'M' : 0.01, 'F' : 0}
 
 def printStat(stat, maxLen):
     stat = str(stat)
@@ -80,7 +83,7 @@ def setSettings(settings):
     setAssignments('GameSettings.txt', settings)
 
 def getSettings():    
-    return getAssignments('GameSettings.txt', {'play_mode' : 'P', 'win_mode' : '0', 'map_size' : 'N', 'drop_type' : '+', 'custom_map_size' : '4x4'})
+    return getAssignments('GameSettings.txt', {'play_mode' : 'P', 'win_mode' : '0', 'map_size' : 'N', 'drop_type' : '+', 'custom_map_size' : '4x4', 'game_speed' : 'F'})
 
 def capturePresses(aiRunning = False, gameMap = [[0] * 4] * 4):
     global event, directions
@@ -100,7 +103,7 @@ def waitForSpace():
 def mainMenu():
     global screen, event, settings, stats, mods
 
-    defaults = {'play_mode' : 'P', 'win_mode' : '0', 'map_size' : 'N', 'drop_type' : '+', 'custom_map_size' : '4x4'}
+    defaults = {'play_mode' : 'P', 'win_mode' : '0', 'map_size' : 'N', 'drop_type' : '+', 'custom_map_size' : '4x4', 'game_speed' : 'F'}
     settings = getSettings()
     stats    = getStats()
     
@@ -113,12 +116,13 @@ def mainMenu():
         screen.addstr('| 2. Combine equal tiles together to create tiles with 2x the value. Try to get to 2048 to win! |\n')
         screen.addstr('| 3. Press the keys inside the square braces to set up the game according to your tastes.       |\n')
         screen.addstr('+-----------------------------------------------------------------------------------------------+\n\n') 
-        screen.addstr('+--------------------- Settings ---------------------+\n')
-        screen.addstr('| Play Mode..([A]I/[P]layer).....................: %s |\n' % settings['play_mode'] if 'play_mode' in settings else defaults['play_mode'])
-        screen.addstr('| Win Mode...(2[0]48/409[6]/81[9]2/[L]imitless)..: %s |\n' % settings['win_mode'] if 'win_mode' in settings else defaults['win_mode'])
-        screen.addstr('| Map Size...([C]ustom/[R]andom/[N]ormal)........: %s |\n' % settings['map_size'] if 'map_size' in settings else defaults['map_size'])
-        screen.addstr('| Drop Type..([2]/[4]/2[+]4).....................: %s |\n' % settings['drop_type'] if 'drop_type' in settings else defaults['drop_type'])
-        screen.addstr('+------- Set To [D]efault (P,0,N,+) Settings? -------+\n\n')
+        screen.addstr('+---------------------- Settings ----------------------+\n')
+        screen.addstr('| Play Mode...([A]I/[P]layer)......................: %s |\n' % settings['play_mode'] if 'play_mode' in settings else defaults['play_mode'])
+        screen.addstr('| Win Mode....(2[0]48/409[6]/81[9]2/[L]imitless)...: %s |\n' % settings['win_mode'] if 'win_mode' in settings else defaults['win_mode'])
+        screen.addstr('| Map Size....([C]ustom/[R]andom/[N]ormal).........: %s |\n' % settings['map_size'] if 'map_size' in settings else defaults['map_size'])
+        screen.addstr('| Drop Type...([2]/[4]/2[+]4)......................: %s |\n' % settings['drop_type'] if 'drop_type' in settings else defaults['drop_type'])
+        screen.addstr('| Game Speed..([S]low/[M]edium/[F]ast).............: %s |\n' % settings['game_speed'] if 'game_speed' in settings else defaults['game_speed'])
+        screen.addstr('+------- Set To [D]efault (P,0,N,+,F) Settings? -------+\n\n')
         screen.addstr('Press space anytime to begin playing!')
 
         mode = ''
@@ -133,6 +137,8 @@ def mainMenu():
             mode = 'map_size'
         elif event in [ord('2'), ord('4'), ord('+')]:
             mode = 'drop_type'
+        elif event in [ord('s'), ord('m'), ord('f')]:
+            mode = 'game_speed'    
         elif event == ord('d'):
             settings = dict(defaults)
         
@@ -144,7 +150,7 @@ def mainMenu():
     setSettings(settings)
 
 def gameLoop():
-    global screen, event, settings, stats, moves, mods, drops
+    global screen, event, settings, stats, moves, mods, drops, timeouts
     
     seed(getGameSeed())
     
@@ -153,13 +159,16 @@ def gameLoop():
     
     setDimensions(int(x), int(y))
     
-    gameMap   = initMap(drops[settings['drop_type']])
-    moves     = {'left' : 0, 'right' : 0, 'down' : 0, 'up' : 0, 'total' : 0, 'useless' : 0}
+    gameMap = initMap(drops[settings['drop_type']])
+    moves   = {'left' : 0, 'right' : 0, 'down' : 0, 'up' : 0, 'total' : 0, 'useless' : 0}
+    timeout = timeouts[settings['game_speed']]
     
     resetScore()
     resetLargest()
 
-    while True:
+    while True: 
+        screen.refresh()
+        time.sleep(timeout)
         screen.clear()
 
         score     = getScore()

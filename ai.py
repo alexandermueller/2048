@@ -4,7 +4,6 @@ from mechanics import *
 from random import *
 
 def greedy(gameMap):
-    seed()
     points = getMovePoints(gameMap)
     
     maxVal = 0
@@ -33,5 +32,6 @@ def iterativeDFS(count, gameMap, move = ''):
         return maxMove if move == '' else maxPoint
 
 def makeMove(gameMap):
+    seed()
     return greedy(gameMap)
     # return iterativeDFS(1, gameMap) !!!WIP!!!
