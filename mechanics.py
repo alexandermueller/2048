@@ -43,18 +43,24 @@ def getScore():
     global score
     return score
 
-def getMovePoints(gameMap, directions = ['up', 'down', 'right', 'left']):
+def getMovePoints(gm, direction = False):
     points = {}
-    for direction in directions:
-        if direction == 'up':
-            points[direction] = solve(ccw(gameMap), test = True, points = True)
-        elif direction == 'down':
-            points[direction] = solve(cw(gameMap), test = True, points = True)
-        elif direction == 'right':
-            points[direction] = solve(cw(cw(gameMap)), test = True, points = True)
-        elif direction == 'left':
-            points[direction] = solve(gameMap, test = True, points = True)
-    return points
+    gameMap = copyMap(gm)
+
+    if direction == 'up':
+        return solve(ccw(gameMap), test = True, points = True)
+    elif direction == 'down':
+        return solve(cw(gameMap), test = True, points = True)
+    elif direction == 'right':
+        return solve(cw(cw(gameMap)), test = True, points = True)
+    elif direction == 'left':
+        return solve(gameMap, test = True, points = True)
+    else: 
+        for direction in ['left', 'up', 'right', 'down']:
+            points            = {}
+            points[direction] = getMovePoints(gameMap, direction)
+
+        return points
 
 def resetLargest():
     global largest

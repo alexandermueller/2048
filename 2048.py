@@ -16,11 +16,10 @@ mods       = {'play_mode'  : {'P' : 'Player', 'A' : 'AI'},
               'win_mode'   : {'0' : '2048', '6' : '4096', '9' : '8192', 'L' : '-1'}, 
               'map_size'   : {'N' : '4x4', 'R' : '4x4'}, 
               'drop_type'  : {'2' : 'Twos Only', '4' : 'Fours Only', '+' : 'Twos And Fours'},
-              'game_speed' : {'S' : 'Slow', 'M' : 'Medium', 'F' : 'Fast'}}
+              'game_speed' : {'S' : 0.2, 'M' : 0.01, 'F' : 0}}
 settings   = {}
 stats      = {}
 event      = 0
-timeouts   = {'S' : 0.1, 'M' : 0.01, 'F' : 0}
 
 def printStat(stat, maxLen):
     stat = str(stat)
@@ -150,7 +149,7 @@ def mainMenu():
     setSettings(settings)
 
 def gameLoop():
-    global screen, event, settings, stats, moves, mods, drops, timeouts
+    global screen, event, settings, stats, moves, mods, drops
     
     seed(getGameSeed())
     
@@ -161,7 +160,7 @@ def gameLoop():
     
     gameMap = initMap(drops[settings['drop_type']])
     moves   = {'left' : 0, 'right' : 0, 'down' : 0, 'up' : 0, 'total' : 0, 'useless' : 0}
-    timeout = timeouts[settings['game_speed']]
+    timeout = mods['game_speed'][settings['game_speed']]
     
     resetScore()
     resetLargest()
@@ -218,7 +217,7 @@ def endGame():
     highScore = str(stats['high'])
     digits = max(len(highScore), len(str(getLargest())))
 
-    if not digits % 2:
+    if not (digits % 2):
         digits += 1
         highScore = ' ' + highScore
 

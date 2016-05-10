@@ -16,22 +16,22 @@ def greedy(gameMap):
 
     return maxKey if maxKey != '' else points.keys()[randint(0, 3)]
 
-def iterativeDFS(count, gameMap, move = ''):
-    if count == 0:
-        return getMovePoints(gameMap, list(move))
-    else:
-        maxMove    = ''
-        maxPoint   = 0
-        directions = ['left', 'right', 'up', 'down']
-        moves = dict(enumerate([iterativeDFS(count - 1, moveMap(direction, gameMap, test = True), direction) for direction in directions]))
-        for key in moves.keys():
-            if maxPoint < moves[key]:
-                maxPoint = moves[key]
-                maxMove  = directions[int(key)]
+def iterativeDFS(count, gameMap, direction = False):
+    points = getMovePoints(gameMap, direction)
 
-        return maxMove if move == '' else maxPoint
+    if count == 0:
+        return [points, direction]
+    else:
+        directions = {}
+        maxPoints  = 0
+
+        for d in ['left', 'right', 'up', 'down']:
+            (p, move) = iterativeDFS(count - 1, moveMap(d, copyMap(gameMap), True), d)
+            directions[p] = move
+            maxPoints     = p if p > maxPoints else maxPoints
+
+        return [maxPoints, directions[maxPoints]]
 
 def makeMove(gameMap):
     seed()
-    return greedy(gameMap)
-    # return iterativeDFS(1, gameMap) !!!WIP!!!
+    return ['left', 'right', 'up', 'down'][randint(0, 3)] #iterativeDFS(2, gameMap)[1] !!WIP!!
