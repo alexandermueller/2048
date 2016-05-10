@@ -193,7 +193,7 @@ def gameLoop():
             waitForSpace()  
             break
         if isTheEnd(gameMap) or not capturePresses(settings['play_mode'] == 'A', gameMap):
-            screen.addstr("\nDarn, better luck next time! Press Space To Continue.")
+            screen.addstr("\nDarn, better luck next time! Press space to continue.")
             waitForSpace()
             break
         elif event in buttons.keys():
