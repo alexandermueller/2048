@@ -35,6 +35,11 @@ def getGameSeed():
     global gameSeed
     return gameSeed
 
+def resetGameSeed():
+    global gameSeed
+    gameSeed = datetime.now()
+    return gameSeed
+
 def resetScore():
     global score
     score = 0

@@ -14,7 +14,7 @@ moves      = {'left' : 0, 'right' : 0, 'down' : 0, 'up' : 0, 'total' : 0, 'usele
 drops      = {'2' : ((1, 2),), '4' : ((1, 4),), '+' : ((0.2, 4), (1, 2))}
 mods       = {'play_mode'  : {'P' : 'Player', 'A' : 'AI'}, 
               'win_mode'   : {'0' : '2048', '6' : '4096', '9' : '8192', 'L' : '-1'}, 
-              'map_size'   : {'N' : '4x4', 'R' : '4x4'}, 
+              'map_size'   : {'N' : '4x4', 'R' : '4x4', 'C' : '8x8'}, 
               'drop_type'  : {'2' : 'Twos Only', '4' : 'Fours Only', '+' : 'Twos And Fours'},
               'game_speed' : {'S' : 0.2, 'M' : 0.01, 'F' : 0}}
 settings   = {}
@@ -87,12 +87,15 @@ def getSettings():
 def capturePresses(aiRunning = False, gameMap = [[0] * 4] * 4):
     global event, directions
 
-    if aiRunning:
-        event = directions[makeMove(gameMap)]
-    elif event != ord('q'):
-        event = screen.getch() 
+    stops = [ord('q'), ord('m')]
+
+    if event not in stops:
+        if aiRunning:
+            event = directions[makeMove(gameMap)]
+        else: 
+            event = screen.getch() 
     
-    return event != ord('q')
+    return event not in stops
 
 def waitForSpace():
     while capturePresses():
@@ -111,7 +114,7 @@ def mainMenu():
     while True:
         screen.clear()
         screen.addstr('+------------------------------------- 2048 / Instructions -------------------------------------+\n') 
-        screen.addstr('| 1. Use directional keys on keyboard to make moves. Press "q" to quit.                         |\n')
+        screen.addstr('| 1. Use directional keys on keyboard to make moves. Press "q" to quit, "m" for main menu.      |\n')
         screen.addstr('| 2. Combine equal tiles together to create tiles with 2x the value. Try to get to 2048 to win! |\n')
         screen.addstr('| 3. Press the keys inside the square braces to set up the game according to your tastes.       |\n')
         screen.addstr('+-----------------------------------------------------------------------------------------------+\n\n') 
@@ -144,14 +147,12 @@ def mainMenu():
         if mode != '':
             settings[mode] = chr(event).upper()
 
-        # if settings['map_size'] == 'C':
-
     setSettings(settings)
 
 def gameLoop():
     global screen, event, settings, stats, moves, mods, drops
     
-    seed(getGameSeed())
+    seed(resetGameSeed())
     
     highScore = stats['high'] 
     (x, y)    = mods['map_size'][settings['map_size']].split('x')
@@ -184,11 +185,11 @@ def gameLoop():
         screen.addstr('| Highscore....: %d | Record Largest: %s | Least/Most Moves..: %s/%s |\n' % tuple(topRow))
         screen.addstr('| Current Score: %s | Game Largest..: %s | Current Move Count: %s %s |\n' % (printStat(score, len(str(topRow[0]))), printStat(getLargest(), len(str(topRow[1]))), ' ' * len(str(topRow[2])), printStat(moves['total'], len(str(topRow[3])))))
         screen.addstr('%s\n\n' % divider)
-        
+
         printMap(gameMap) 
 
         if hasWon(mods['win_mode'][settings['win_mode']]):
-            screen.addstr("\nCongrats! You are a winner! Press Space To Continue.")
+            screen.addstr("\nCongrats! You are a winner! Press space to continue.")
             stats['least'] = min(moves['total'], stats['least']) if stats['least'] else moves['total']
             waitForSpace()  
             break
@@ -243,13 +244,12 @@ def endGame():
     screen.addstr('Press space to try again! Otherwise, hit q to leave.')
     
     waitForSpace()
-
+    
     setStats(stats)
 
 def main(stdscr):
     global screen, event
     screen = stdscr
-    screen.clear()
     
     curses.noecho() 
     
@@ -262,6 +262,7 @@ def main(stdscr):
     screen.keypad(1) 
 
     while event != ord('q'):
+        event = 0
         mainMenu()
         gameLoop()
         endGame()

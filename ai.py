@@ -22,7 +22,7 @@ def iterativeDFS(count, gameMap, direction = False):
     if count == 0:
         return [points, direction]
     else:
-        directions = {}
+        directions = dict()
         maxPoints  = 0
 
         for d in ['left', 'right', 'up', 'down']:
@@ -30,8 +30,11 @@ def iterativeDFS(count, gameMap, direction = False):
             directions[p] = move
             maxPoints     = p if p > maxPoints else maxPoints
 
+        if maxPoints == 0:
+            directions[maxPoints] = ['left', 'right', 'up', 'down'][randint(0, 3)]
+
         return [maxPoints, directions[maxPoints]]
 
 def makeMove(gameMap):
-    seed()
-    return ['left', 'right', 'up', 'down'][randint(0, 3)] #iterativeDFS(2, gameMap)[1] !!WIP!!
+    return iterativeDFS(1, gameMap)[1] #!!WIP!! TODO: Figure out how to capture keypresses while waiting for ai to move!!!
+    # return ['left', 'right', 'up', 'down'][randint(0, 3)]
