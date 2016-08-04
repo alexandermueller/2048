@@ -87,7 +87,7 @@ def getSettings():
 def capturePresses(aiRunning = False, gameMap = [[0] * 4] * 4):
     global event, directions
 
-    stops = [ord('q'), ord('m')]
+    stops = [ord('q'), ord('e')]
 
     if event not in stops:
         if aiRunning:
