@@ -16,10 +16,18 @@ mods       = {'play_mode'  : {'P' : 'Player', 'A' : 'AI'},
               'win_mode'   : {'0' : '2048', '6' : '4096', '9' : '8192', 'L' : '-1'}, 
               'map_size'   : {'N' : '4x4', 'R' : '4x4', 'C' : '8x8'}, 
               'drop_type'  : {'2' : 'Twos Only', '4' : 'Fours Only', '+' : 'Twos And Fours'},
-              'game_speed' : {'S' : 0.2, 'M' : 0.01, 'F' : 0}}
+              'game_speed' : {'S' : 0.2, 'M' : 0.01, 'F' : 0},
+              'game_type'  : {'O' : 'Original', 'T' : 'AI Tuning'}}
 settings   = {}
 stats      = {}
 event      = 0
+
+def getSetting(event, settings):
+    for setting in settings:
+        options = [ord(option.lower()) for option in (settings[setting]).keys()]
+        
+        if event in options:
+            return setting
 
 def printStat(stat, maxLen):
     stat = str(stat)
@@ -82,7 +90,7 @@ def setSettings(settings):
     setAssignments('GameSettings.txt', settings)
 
 def getSettings():    
-    return getAssignments('GameSettings.txt', {'play_mode' : 'P', 'win_mode' : '0', 'map_size' : 'N', 'drop_type' : '+', 'custom_map_size' : '4x4', 'game_speed' : 'F'})
+    return getAssignments('GameSettings.txt', {'play_mode' : 'P', 'win_mode' : '0', 'map_size' : 'N', 'drop_type' : '+', 'custom_map_size' : '4x4', 'game_speed' : 'F', 'game_type' : 'O'})
 
 def capturePresses(aiRunning = False, gameMap = [[0] * 4] * 4):
     global event, directions
@@ -105,7 +113,7 @@ def waitForSpace():
 def mainMenu():
     global screen, event, settings, stats, mods
 
-    defaults = {'play_mode' : 'P', 'win_mode' : '0', 'map_size' : 'N', 'drop_type' : '+', 'custom_map_size' : '4x4', 'game_speed' : 'F'}
+    defaults = {'play_mode' : 'P', 'win_mode' : '0', 'map_size' : 'N', 'drop_type' : '+', 'custom_map_size' : '4x4', 'game_speed' : 'F', 'game_type' : 'O'}
     settings = getSettings()
     stats    = getStats()
     
@@ -124,28 +132,21 @@ def mainMenu():
         screen.addstr('| Map Size....([C]ustom/[R]andom/[N]ormal).........: %s |\n' % settings['map_size'] if 'map_size' in settings else defaults['map_size'])
         screen.addstr('| Drop Type...([2]/[4]/2[+]4)......................: %s |\n' % settings['drop_type'] if 'drop_type' in settings else defaults['drop_type'])
         screen.addstr('| Game Speed..([S]low/[M]edium/[F]ast).............: %s |\n' % settings['game_speed'] if 'game_speed' in settings else defaults['game_speed'])
-        screen.addstr('+------- Set To [D]efault (P,0,N,+,F) Settings? -------+\n\n')
+        screen.addstr('| Game Type...([O]riginal/AI[T]uning)..............: %s |\n' % settings['game_type'] if 'game_type' in settings else defaults['game_type'])
+        screen.addstr('+------ Set To [D]efault (P,0,N,+,F,O) Settings? ------+\n\n')
         screen.addstr('Press space anytime to begin playing!')
 
-        mode = ''
+        setting = ''
 
         if not capturePresses() or event == ord(' '):
             break
-        elif event in [ord('a'), ord('p')]:
-            mode = 'play_mode'
-        elif event in [ord('0'), ord('6'), ord('9'), ord('l')]:
-            mode = 'win_mode'
-        elif event in [ord('c'), ord('r'), ord('n')]:
-            mode = 'map_size'
-        elif event in [ord('2'), ord('4'), ord('+')]:
-            mode = 'drop_type'
-        elif event in [ord('s'), ord('m'), ord('f')]:
-            mode = 'game_speed'    
         elif event == ord('d'):
             settings = dict(defaults)
+        else:
+            setting = getSetting(event, mods)
         
-        if mode != '':
-            settings[mode] = chr(event).upper()
+        if setting != '':
+            settings[setting] = chr(event).upper()
 
     setSettings(settings)
 

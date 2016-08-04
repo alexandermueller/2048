@@ -35,6 +35,20 @@ def iterativeDFS(count, gameMap, direction = False):
 
         return [maxPoints, directions[maxPoints]]
 
+#idea: let your ai *tune* itself by finding a perfect balance of movements to optimize the result
+def newAI():
+        result = random()
+        
+        if result < 0.5:
+            return 'left'
+        elif result < 0.8:
+            return 'down'
+        elif result < 0.99:
+            return 'up'
+        else: 
+            return 'right'
+
 def makeMove(gameMap):
     # return iterativeDFS(2, gameMap)[1] #!!WIP!! TODO: Figure out how to capture keypresses while waiting for ai to move!!!
-    return ['left', 'right', 'up', 'down'][randint(0, 3)]
+    # return ['left', 'right', 'up', 'down'][randint(0, 3)]
+    return newAI()
