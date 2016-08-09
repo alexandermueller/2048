@@ -7,6 +7,17 @@ gameSeed   = datetime.now()
 score      = 0
 largest    = 2
 dimensions = [4, 4]
+mapHash    = dict()
+
+# TODO: Implement this function.
+# def addMovesToHash(moveList):
+#     global mapHash
+    
+#     for (hashNumber, move) in moveList:
+#         mapHash[]
+
+def getMapHash(gameMap):
+    return hash(tuple(gameMap))
 
 def setDimensions(x, y):
     global dimensions
@@ -29,7 +40,6 @@ def getDefaultMap(x = False, y = False):
             default[i].append(0)
 
     return default
-
 
 def getGameSeed():
     global gameSeed

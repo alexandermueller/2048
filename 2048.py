@@ -20,7 +20,12 @@ mods       = {'play_mode'  : {'P' : 'Player', 'A' : 'AI'},
               'game_type'  : {'O' : 'Original', 'T' : 'AI Tuning'}}
 settings   = {}
 stats      = {}
+hashTable  = {}
 event      = 0
+
+def printUI(message):
+    screen.clear()
+    screen.addstr(message)
 
 def getSetting(event, settings):
     for setting in settings:
@@ -92,6 +97,12 @@ def setSettings(settings):
 def getSettings():    
     return getAssignments('GameSettings.txt', {'play_mode' : 'P', 'win_mode' : '0', 'map_size' : 'N', 'drop_type' : '+', 'custom_map_size' : '4x4', 'game_speed' : 'F', 'game_type' : 'O'})
 
+def setHashTable(table):
+    setAssignments('GameStateHashTable.txt', table)
+
+def getHashTable():
+    return getAssignments('GameStateHashTable.txt', {})
+
 def capturePresses(aiRunning = False, gameMap = [[0] * 4] * 4):
     global event, directions
 
@@ -106,7 +117,7 @@ def capturePresses(aiRunning = False, gameMap = [[0] * 4] * 4):
     return event not in stops
 
 def waitForSpace():
-    while capturePresses():
+    while settings['game_type'] != 'T' and capturePresses():
         if event == ord(' '):
             break
 
@@ -120,21 +131,22 @@ def mainMenu():
     mods['map_size']['R'] = 'x'.join([str(randint(2, 7)), str(randint(2, 7))])
 
     while True:
-        screen.clear()
-        screen.addstr('+------------------------------------- 2048 / Instructions -------------------------------------+\n') 
-        screen.addstr('| 1. Use directional keys on keyboard to make moves. Press "q" to quit, "m" for main menu.      |\n')
-        screen.addstr('| 2. Combine equal tiles together to create tiles with 2x the value. Try to get to 2048 to win! |\n')
-        screen.addstr('| 3. Press the keys inside the square braces to set up the game according to your tastes.       |\n')
-        screen.addstr('+-----------------------------------------------------------------------------------------------+\n\n') 
-        screen.addstr('+---------------------- Settings ----------------------+\n')
-        screen.addstr('| Play Mode...([A]I/[P]layer)......................: %s |\n' % settings['play_mode'] if 'play_mode' in settings else defaults['play_mode'])
-        screen.addstr('| Win Mode....(2[0]48/409[6]/81[9]2/[L]imitless)...: %s |\n' % settings['win_mode'] if 'win_mode' in settings else defaults['win_mode'])
-        screen.addstr('| Map Size....([C]ustom/[R]andom/[N]ormal).........: %s |\n' % settings['map_size'] if 'map_size' in settings else defaults['map_size'])
-        screen.addstr('| Drop Type...([2]/[4]/2[+]4)......................: %s |\n' % settings['drop_type'] if 'drop_type' in settings else defaults['drop_type'])
-        screen.addstr('| Game Speed..([S]low/[M]edium/[F]ast).............: %s |\n' % settings['game_speed'] if 'game_speed' in settings else defaults['game_speed'])
-        screen.addstr('| Game Type...([O]riginal/AI[T]uning)..............: %s |\n' % settings['game_type'] if 'game_type' in settings else defaults['game_type'])
-        screen.addstr('+------ Set To [D]efault (P,0,N,+,F,O) Settings? ------+\n\n')
-        screen.addstr('Press space anytime to begin playing!')
+        menu  = '+------------------------------------- 2048 / Instructions -------------------------------------+\n'
+        menu += '| 1. Use directional keys on keyboard to make moves. Press "q" to quit, "m" for main menu.      |\n'
+        menu += '| 2. Combine equal tiles together to create tiles with 2x the value. Try to get to 2048 to win! |\n'
+        menu += '| 3. Press the keys inside the square braces to set up the game according to your tastes.       |\n'
+        menu += '+-----------------------------------------------------------------------------------------------+\n\n'
+        menu += '+---------------------- Settings ----------------------+\n'
+        menu += '| Play Mode...([A]I/[P]layer)......................: %s |\n' % settings['play_mode'] if 'play_mode' in settings else defaults['play_mode']
+        menu += '| Win Mode....(2[0]48/409[6]/81[9]2/[L]imitless)...: %s |\n' % settings['win_mode'] if 'win_mode' in settings else defaults['win_mode']
+        menu += '| Map Size....([C]ustom/[R]andom/[N]ormal).........: %s |\n' % settings['map_size'] if 'map_size' in settings else defaults['map_size']
+        menu += '| Drop Type...([2]/[4]/2[+]4)......................: %s |\n' % settings['drop_type'] if 'drop_type' in settings else defaults['drop_type']
+        menu += '| Game Speed..([S]low/[M]edium/[F]ast).............: %s |\n' % settings['game_speed'] if 'game_speed' in settings else defaults['game_speed']
+        menu += '| Game Type...([O]riginal/AI[T]uning)..............: %s |\n' % settings['game_type'] if 'game_type' in settings else defaults['game_type']
+        menu += '+------ Set To [D]efault (P,0,N,+,F,O) Settings? ------+\n\n'
+        menu += 'Press space anytime to begin playing!'
+        
+        printUI(menu)
 
         setting = ''
 
@@ -149,8 +161,9 @@ def mainMenu():
             settings[setting] = chr(event).upper()
 
     setSettings(settings)
+    return settings['game_type']
 
-def gameLoop():
+def gameLoop(gameCount):
     global screen, event, settings, stats, moves, mods, drops
     
     seed(resetGameSeed())
@@ -170,24 +183,29 @@ def gameLoop():
     while True: 
         screen.refresh()
         time.sleep(timeout)
-        screen.clear()
 
         score     = getScore()
         highScore = max(highScore, score)
         
-        chosen    = [mods[mode][settings[mode]] for mode in ['play_mode', 'win_mode', 'map_size', 'drop_type']]    
-        topRow    = [highScore, stats['largest'], stats['least'], stats['most']]
-        title     = ' / '.join(chosen)
-        divider   = '+----------------%s-+-----------------%s-+---------------------%s-%s-+' % tuple(['-' * len(str(stat)) for stat in topRow])
-        filler    = '-' * ((len(divider) - len(title) - 4) / 2)
+        chosen  = [mods[mode][settings[mode]] for mode in ['play_mode', 'win_mode', 'map_size', 'drop_type', 'game_type']]    
+        topRow  = [highScore, stats['largest'], stats['least'], stats['most']]
+        title   = ' / '.join(chosen)
+        divider = '+----------------%s-+-----------------%s-+---------------------%s-%s-+' % tuple(['-' * len(str(stat)) for stat in topRow])
+        filler  = '-' * ((len(divider) - len(title) - 4) / 2)
 
-        screen.addstr(' %s %s %s\n' % (filler, title, filler))
-        screen.addstr('%s\n' % divider)
-        screen.addstr('| Highscore....: %d | Record Largest: %s | Least/Most Moves..: %s/%s |\n' % tuple(topRow))
-        screen.addstr('| Current Score: %s | Game Largest..: %s | Current Move Count: %s %s |\n' % (printStat(score, len(str(topRow[0]))), printStat(getLargest(), len(str(topRow[1]))), ' ' * len(str(topRow[2])), printStat(moves['total'], len(str(topRow[3])))))
-        screen.addstr('%s\n\n' % divider)
+        header  = ' %s %s %s\n' % (filler, title, filler)
+        header += '%s\n' % divider
+        header += '| Highscore....: %d | Record Largest: %s | Least/Most Moves..: %s/%s |\n' % tuple(topRow)
+        
+        if settings['game_type'] == 'O':
+            header += '| Current Score: %s | Game Largest..: %s | Current Move Count: %s %s |\n' % (printStat(score, len(str(topRow[0]))), printStat(getLargest(), len(str(topRow[1]))), ' ' * len(str(topRow[2])), printStat(moves['total'], len(str(topRow[3]))))
+        else:
+            header += '| Current Score: %s | Game Largest..: %s | Current Game Count: %s %s |\n' % (printStat(score, len(str(topRow[0]))), printStat(getLargest(), len(str(topRow[1]))), ' ' * len(str(topRow[2])), printStat(gameCount, len(str(topRow[3]))))
 
-        printMap(gameMap) 
+        header += '%s\n\n' % divider
+
+        printUI(header)
+        printMap(gameMap)
 
         if hasWon(mods['win_mode'][settings['win_mode']]):
             screen.addstr("\nCongrats! You are a winner! Press space to continue.")
@@ -225,28 +243,31 @@ def endGame():
 
     half = '-' * (digits / 2)
     full = '-' * digits
+
+    statistics  = ' %s--- 2048 / Game Over ---%s \n' % (half, half)
+    statistics += '+%s------ Game Stats ------%s+\n' % (half, half)
+    statistics += '| Record Largest......:%s |\n' % printStat(stats['largest'], digits)
+    statistics += '| Game Largest........:%s |\n' % printStat(getLargest(), digits)
+    statistics += '| Highscore...........:%s |\n' % printStat(highScore, digits)
+    statistics += '| Score...............:%s |\n' % printStat(getScore(), digits)
+    statistics += '| Ups.................:%s |\n' % printStat(moves['up'], digits)
+    statistics += '| Lefts...............:%s |\n' % printStat(moves['left'], digits)
+    statistics += '| Downs...............:%s |\n' % printStat(moves['down'], digits)
+    statistics += '| Rights..............:%s |\n' % printStat(moves['right'], digits)
+    statistics += '| Total Moves.........:%s |\n' % printStat(moves['total'], digits)
+    statistics += '| Useless Moves.......:%s |\n' % printStat(moves['useless'], digits)
+    statistics += '| Most Moves Taken....:%s |\n' % printStat(stats['most'], digits)
+    statistics += '| Least Moves To Win..:%s |\n' % printStat(stats['least'], digits)
+    statistics += '+-----------------------%s+\n\n' % full
+    statistics += 'Press space to try again! Otherwise, hit q to leave.'
     
-    screen.clear()
-    screen.addstr(' %s--- 2048 / Game Over ---%s \n' % (half, half))
-    screen.addstr('+%s------ Game Stats ------%s+\n' % (half, half))
-    screen.addstr('| Record Largest......:%s |\n' % printStat(stats['largest'], digits))
-    screen.addstr('| Game Largest........:%s |\n' % printStat(getLargest(), digits))
-    screen.addstr('| Highscore...........:%s |\n' % printStat(highScore, digits))
-    screen.addstr('| Score...............:%s |\n' % printStat(getScore(), digits))
-    screen.addstr('| Ups.................:%s |\n' % printStat(moves['up'], digits))
-    screen.addstr('| Lefts...............:%s |\n' % printStat(moves['left'], digits))
-    screen.addstr('| Downs...............:%s |\n' % printStat(moves['down'], digits))
-    screen.addstr('| Rights..............:%s |\n' % printStat(moves['right'], digits))
-    screen.addstr('| Total Moves.........:%s |\n' % printStat(moves['total'], digits))
-    screen.addstr('| Useless Moves.......:%s |\n' % printStat(moves['useless'], digits))
-    screen.addstr('| Most Moves Taken....:%s |\n' % printStat(stats['most'], digits))
-    screen.addstr('| Least Moves To Win..:%s |\n' % printStat(stats['least'], digits))
-    screen.addstr('+-----------------------%s+\n\n' % full)
-    screen.addstr('Press space to try again! Otherwise, hit q to leave.')
-    
+    isNewHighScore = stats['high'] < getScore()
+
+    printUI(statistics)
     waitForSpace()
-    
     setStats(stats)
+    
+    return isNewHighScore
 
 def main(stdscr):
     global screen, event
@@ -262,11 +283,22 @@ def main(stdscr):
     
     screen.keypad(1) 
 
+    gameType = 'O'
+
     while event != ord('q'):
-        event = 0
-        mainMenu()
-        gameLoop()
-        endGame()
+        event        = 0
+        gameType     = mainMenu()
+        gameSessions = 10 if gameType == 'T' else 1
+        
+        for i in xrange(0, gameSessions):
+            gameLoop(i)
+            isNewHighScore = endGame()
+    
+            if isNewHighScore and gameType == 'T':
+                x = 1
+
+        if gameType == 'T': 
+            setHashTable({'a' : 12})
 
     curses.endwin()
 

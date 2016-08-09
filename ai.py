@@ -36,7 +36,7 @@ def iterativeDFS(count, gameMap, direction = False):
         return [maxPoints, directions[maxPoints]]
 
 #idea: let your ai *tune* itself by finding a perfect balance of movements to optimize the result
-def newAI():
+def probabilistic():
         result = random()
         
         if result < 0.5:
@@ -48,7 +48,10 @@ def newAI():
         else: 
             return 'right'
 
+# TODO: Implement this AI.
+# def evoAlg(gameMap):
+
 def makeMove(gameMap):
     # return iterativeDFS(2, gameMap)[1] #!!WIP!! TODO: Figure out how to capture keypresses while waiting for ai to move!!!
     # return ['left', 'right', 'up', 'down'][randint(0, 3)]
-    return newAI()
+    return probabilistic()
