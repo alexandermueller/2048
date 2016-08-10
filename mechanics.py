@@ -7,7 +7,7 @@ gameSeed   = datetime.now()
 score      = 0
 largest    = 2
 dimensions = [4, 4]
-mapHash    = dict()
+mapHash    = {}
 
 # TODO: Implement this function.
 # def addMovesToHash(moveList):

@@ -3,8 +3,8 @@
 
 import time
 import curses
-import os.path
 from mechanics import *
+from fileSaves import *
 from ai import makeMove
 
 screen     = curses.initscr()
@@ -20,7 +20,7 @@ mods       = {'play_mode'  : {'P' : 'Player', 'A' : 'AI'},
               'game_type'  : {'O' : 'Original', 'T' : 'AI Tuning'}}
 settings   = {}
 stats      = {}
-hashTable  = {}
+movesTable = {}
 event      = 0
 
 def printUI(message):
@@ -55,62 +55,14 @@ def printMap(gameMap):
 
     screen.addstr(divider)
 
-def setAssignments(filename, assignments):
-    assignmentsFile = open(filename, 'w')
-    assignmentsList = []
-
-    for assignment in assignments.keys():
-        assignmentsList.append('%s:%s' % (assignment, assignments[assignment]))
-
-    assignmentsFile.write('\n'.join(assignmentsList))
-    assignmentsFile.close()
-
-def getAssignments(filename, defaults):
-    assignments = defaults
-    
-    if os.path.isfile(filename):
-        assignmentsFile = open(filename, 'r')
-
-        for line in assignmentsFile.read().split('\n'):
-            assignment = line.split(':')
-            if len(assignment) == 2: 
-                assignments[assignment[0]] = str(assignment[1])
-    
-        assignmentsFile.close()
-    
-    return assignments
-
-def setStats(stats):
-    setAssignments('Stats.txt', stats)
-
-def getStats():    
-    stats = getAssignments('Stats.txt', {'high' : 0, 'most' : 0, 'least' : 0, 'largest' : 2})
-    
-    for stat in stats.keys():
-        stats[stat] = int(stats[stat])
-
-    return stats
-
-def setSettings(settings):
-    setAssignments('GameSettings.txt', settings)
-
-def getSettings():    
-    return getAssignments('GameSettings.txt', {'play_mode' : 'P', 'win_mode' : '0', 'map_size' : 'N', 'drop_type' : '+', 'custom_map_size' : '4x4', 'game_speed' : 'F', 'game_type' : 'O'})
-
-def setHashTable(table):
-    setAssignments('GameStateHashTable.txt', table)
-
-def getHashTable():
-    return getAssignments('GameStateHashTable.txt', {})
-
 def capturePresses(aiRunning = False, gameMap = [[0] * 4] * 4):
-    global event, directions
+    global event, directions, movesTable
 
     stops = [ord('q'), ord('e')]
 
     if event not in stops:
         if aiRunning:
-            event = directions[makeMove(gameMap)]
+            event = directions[makeMove(gameMap, movesTable)]
         else: 
             event = screen.getch() 
     
@@ -125,8 +77,10 @@ def mainMenu():
     global screen, event, settings, stats, mods
 
     defaults = {'play_mode' : 'P', 'win_mode' : '0', 'map_size' : 'N', 'drop_type' : '+', 'custom_map_size' : '4x4', 'game_speed' : 'F', 'game_type' : 'O'}
-    settings = getSettings()
-    stats    = getStats()
+    lowStats = {'high' : 0, 'most' : 0, 'least' : 0, 'largest' : 2}
+
+    settings = getSettings(defaults)
+    stats    = getStats(lowStats)
     
     mods['map_size']['R'] = 'x'.join([str(randint(2, 7)), str(randint(2, 7))])
 
@@ -270,7 +224,7 @@ def endGame():
     return isNewHighScore
 
 def main(stdscr):
-    global screen, event
+    global screen, event, movesTable
     screen = stdscr
     
     curses.noecho() 
@@ -288,17 +242,18 @@ def main(stdscr):
     while event != ord('q'):
         event        = 0
         gameType     = mainMenu()
-        gameSessions = 10 if gameType == 'T' else 1
-        
+        gameSessions = 1000 if gameType == 'T' else 1
+        movesTable   = getHashTable(movesTable) if gameType == 'T' else movesTable
+
         for i in xrange(0, gameSessions):
             gameLoop(i)
             isNewHighScore = endGame()
     
-            if isNewHighScore and gameType == 'T':
-                x = 1
+            # if isNewHighScore and gameType == 'T':
+
 
         if gameType == 'T': 
-            setHashTable({'a' : 12})
+            setHashTable(movesTable)
 
     curses.endwin()
 

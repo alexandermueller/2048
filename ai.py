@@ -48,10 +48,19 @@ def probabilistic():
         else: 
             return 'right'
 
-# TODO: Implement this AI.
-# def evoAlg(gameMap):
+def evoAlg(gameMap, movesTable):
+    # board = copyMap(gameMap)
 
-def makeMove(gameMap):
+    # while getMapHash(board) not in movesTable.keys():
+    #     board = board
+
+    # for move in ['left', 'right', 'up', 'down']:
+
+
+
+def makeMove(gameMap, movesTable):
     # return iterativeDFS(2, gameMap)[1] #!!WIP!! TODO: Figure out how to capture keypresses while waiting for ai to move!!!
-    # return ['left', 'right', 'up', 'down'][randint(0, 3)]
-    return probabilistic()
+    return ['left', 'right', 'up', 'down'][randint(0, 3)]
+    # return probabilistic()
+
+    # return evoAlg(gameMap, movesTable)
