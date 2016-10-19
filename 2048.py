@@ -86,7 +86,7 @@ def mainMenu():
 
     while True:
         menu  = '+------------------------------------- 2048 / Instructions -------------------------------------+\n'
-        menu += '| 1. Use directional keys on keyboard to make moves. Press "q" to quit, "m" for main menu.      |\n'
+        menu += '| 1. Use directional keys on keyboard to make moves. Press "q" to quit, "e" for main menu.      |\n'
         menu += '| 2. Combine equal tiles together to create tiles with 2x the value. Try to get to 2048 to win! |\n'
         menu += '| 3. Press the keys inside the square braces to set up the game according to your tastes.       |\n'
         menu += '+-----------------------------------------------------------------------------------------------+\n\n'

@@ -35,20 +35,21 @@ def iterativeDFS(count, gameMap, direction = False):
 
         return [maxPoints, directions[maxPoints]]
 
-#idea: let your ai *tune* itself by finding a perfect balance of movements to optimize the result
 def probabilistic():
-        result = random()
-        
-        if result < 0.5:
-            return 'left'
-        elif result < 0.8:
-            return 'down'
-        elif result < 0.99:
-            return 'up'
-        else: 
-            return 'right'
+    #idea: let your ai *tune* itself by finding a perfect balance of movements to optimize the result
+    
+    result = random()
 
-def evoAlg(gameMap, movesTable):
+    if result < 0.5:
+        return 'left'
+    elif result < 0.8:
+        return 'down'
+    elif result < 0.99:
+        return 'up'
+    else: 
+        return 'right'
+
+# def evoAlg(gameMap, movesTable):
     # board = copyMap(gameMap)
 
     # while getMapHash(board) not in movesTable.keys():
